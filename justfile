@@ -12,3 +12,6 @@ build:
 
 deploy:
     cd infra && tofu apply
+
+smoke-test:
+    cd infra && tofu output -json | jq -r '.lambda_function_url.value' | xargs curl -is

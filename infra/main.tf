@@ -93,7 +93,7 @@ resource "aws_iam_role_policy_attachment" "attach_iam_policy_to_iam_role" {
 #  output_path = "${path.module}/python/hello-python.zip"
 #}
 
-resource "aws_lambda_function" "terraform_lambda_func" {
+resource "aws_lambda_function" "noughts_and_crosses" {
   architectures = ["arm64"]
   filename      = "${path.module}/../target/lambda/noughts-and-crosses/bootstrap.zip"
   function_name = "noughts_and_crosses"
@@ -101,4 +101,14 @@ resource "aws_lambda_function" "terraform_lambda_func" {
   handler       = "bootstrap"
   runtime       = "provided.al2023"
   depends_on    = [aws_iam_role_policy_attachment.attach_iam_policy_to_iam_role]
+}
+
+resource "aws_lambda_function_url" "noughts_and_crosses_function_url" {
+  function_name      = aws_lambda_function.noughts_and_crosses.function_name
+  authorization_type = "NONE"
+}
+
+output "lambda_function_url" {
+  value = aws_lambda_function_url.noughts_and_crosses_function_url.function_url
+  description = "The URL of the Lambda function"
 }
