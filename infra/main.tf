@@ -2,8 +2,47 @@ provider "aws" {
   region = "eu-west-1"
 }
 
+terraform {
+  backend "s3" {
+    bucket         = "terraform-state.sneeu.com"
+    key            = "projects/noughts-and-crosses/terraform.tfstate"
+    region         = "eu-west-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}
+
+resource "aws_s3_bucket" "terraform_state" {
+  bucket = "terraform-state.sneeu.com"
+}
+
+resource "aws_s3_bucket_ownership_controls" "terraform_state_ownership_controls" {
+  bucket = aws_s3_bucket.terraform_state.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "terraform_state_acl" {
+  depends_on = [aws_s3_bucket_ownership_controls.terraform_state_ownership_controls]
+
+  bucket = aws_s3_bucket.terraform_state.id
+  acl    = "private"
+}
+
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = "terraform-locks"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+}
+
 resource "aws_iam_role" "lambda_role" {
-  name               = "Spacelift_Test_Lambda_Function_Role"
+  name               = "Noughts-and-Crosses-Lambda-Function-Role"
   assume_role_policy = <<EOF
   {
     "Version": "2012-10-17",
@@ -22,7 +61,7 @@ resource "aws_iam_role" "lambda_role" {
 }
 
 resource "aws_iam_policy" "iam_policy_for_lambda" {
-  name        = "aws_iam_policy_for_terraform_aws_lambda_role"
+  name        = "aws-iam-policy-for-terraform-aws-lambda-role"
   path        = "/"
   description = "AWS IAM Policy for managing aws lambda role"
   policy      = <<EOF
